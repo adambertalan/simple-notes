@@ -1,0 +1,57 @@
+<mat-toolbar color="primary">
+  <span class="title-container">
+    <a routerLink="/home">My Notes</a>
+  </span>
+
+  <mat-list *ngIf="authenticated">
+    <mat-list-item class="progress" *ngIf="noteService.loading">
+      Saving
+      <mat-icon>autorenew</mat-icon>
+    </mat-list-item>
+    <mat-list-item class="saved" *ngIf="!noteService.loading">
+      Saved
+      <mat-icon>check_circle</mat-icon>
+    </mat-list-item>
+    <ng-container *ngIf="noteService.selectedNoteId !== null">
+      <mat-list-item *ngIf="noteService.selectedNoteCanBeSub">
+        <button
+          mat-icon-button
+          color="accent"
+          matTooltip="Move to sub"
+          (click)="moveToSubClick()"
+        >
+          <mat-icon class="rotate-180">subdirectory_arrow_left</mat-icon>
+        </button>
+      </mat-list-item>
+      <mat-list-item>
+        <button
+          mat-icon-button
+          color="accent"
+          matTooltip="Delete note"
+          (click)="deleteClick()"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-list-item>
+    </ng-container>
+    <mat-list-item>
+      <button
+        mat-icon-button
+        color="accent"
+        matTooltip="Create new note"
+        (click)="createClick()"
+      >
+        <mat-icon>add_circle_outline</mat-icon>
+      </button>
+    </mat-list-item>
+    <mat-divider [vertical]="true"></mat-divider>
+  </mat-list>
+
+  <div class="auth-container">
+    <ng-container *ngIf="!authenticated">
+      <a mat-button routerLink="/login">Login</a>
+      <a mat-button routerLink="/signup">Sign up</a>
+    </ng-container>
+    <button *ngIf="authenticated" mat-button (click)="logout()">Logout</button>
+  </div>
+</mat-toolbar>

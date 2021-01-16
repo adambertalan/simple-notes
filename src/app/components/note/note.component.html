@@ -1,0 +1,23 @@
+<div class="container flex-column flex-column-stretch">
+  <div class="title-container">
+    <mat-form-field>
+      <input
+        matInput
+        [value]="note?.title"
+        (input)="titleChange($event.target)"
+      />
+    </mat-form-field>
+  </div>
+  <div class="content-container">
+    <mat-form-field>
+      <textarea
+        matInput
+        cdkTextareaAutosize
+        cdkAutosizeMinRows="1"
+        [value]="note?.content || ''"
+        (input)="contentChange($event.target)"
+      >
+      </textarea>
+    </mat-form-field>
+  </div>
+</div>

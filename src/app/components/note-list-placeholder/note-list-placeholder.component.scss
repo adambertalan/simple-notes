@@ -1,0 +1,17 @@
+.container {
+  justify-content: flex-start;
+}
+
+.text-container {
+  padding-top: 50px;
+  justify-content: flex-start;
+
+  p {
+    margin: 0;
+    margin-bottom: 10px;
+  }
+
+  button {
+    color: initial;
+  }
+}

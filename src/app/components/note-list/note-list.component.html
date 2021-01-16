@@ -1,0 +1,22 @@
+<mat-selection-list
+  [id]="listId"
+  cdkDropList
+  [multiple]="false"
+  [cdkDropListConnectedTo]="[otherListId]"
+  (cdkDropListDropped)="drop($event)"
+>
+  <mat-list-option
+    *ngFor="let note of notes"
+    [value]="note.id"
+    [selected]="selectedId === note.id"
+    (click)="noteSelected(note.id)"
+    cdkDrag
+  >
+    <span class="list-text-container">
+      <p matLine>{{ note.title }}</p>
+      <mat-icon *ngIf="(note.subNotes?.length || 0) > 0"
+        >chevron_right</mat-icon
+      >
+    </span>
+  </mat-list-option>
+</mat-selection-list>

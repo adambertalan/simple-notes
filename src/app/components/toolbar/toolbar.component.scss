@@ -1,0 +1,69 @@
+mat-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .auth-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .title-container {
+    flex: 1;
+  }
+}
+
+a,
+a:link,
+a:visited,
+a:hover,
+a:active {
+  color: inherit;
+  text-decoration: none;
+}
+
+mat-list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+mat-divider {
+  margin: 4px;
+}
+
+.progress {
+  color: #ffd600;
+
+  mat-icon {
+    animation: rotating 2s linear infinite;
+  }
+}
+
+.saved {
+  color: #64dd17;
+  animation: disappear 1.5s cubic-bezier(0.96, 0.03, 0.6, -0.09) forwards;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+@keyframes rotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes disappear {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
