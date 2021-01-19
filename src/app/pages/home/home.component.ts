@@ -1,3 +1,4 @@
+import { NotesState } from './../../store/reducers/notes.reducer';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from './../../services/auth.service';
 import { PersistenceService } from './../../services/persistence.service';
@@ -9,6 +10,8 @@ import {
 import { NoteService } from './../../services/note.service';
 import { Note } from './../../models/note.model';
 import { Component, OnInit } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { setLoadedNotes } from 'src/app/store/actions/notes.actions';
 
 @Component({
   selector: 'app-home',
@@ -27,6 +30,7 @@ export class HomeComponent implements OnInit {
   displayNote: Note | null = null;
 
   constructor(
+    private store: Store<{ notes: NotesState }>,
     private noteService: NoteService,
     private persistenceService: PersistenceService,
     private authService: AuthService,
@@ -34,6 +38,7 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // this.store.dispatch(setLoadedNotes({notes: []}));
     this.noteService.createNote.subscribe(() => {
       this.noteService.loading = true;
 

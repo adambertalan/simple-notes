@@ -30,6 +30,10 @@ import { SignupComponent } from './pages/signup/signup.component';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { NoteListPlaceholderComponent } from './components/note-list-placeholder/note-list-placeholder.component';
 import { MainContentComponent } from './components/main-content/main-content.component';
+import { StoreModule } from '@ngrx/store';
+import { notesReducer } from './store/reducers/notes.reducer';
+import { EffectsModule } from '@ngrx/effects';
+import { NotesEffects } from './store/effects/notes.effects';
 
 const config = { ...environment.firebase };
 
@@ -48,12 +52,18 @@ const config = { ...environment.firebase };
     MainContentComponent,
   ],
   imports: [
+    // Angular modules
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
     FormsModule,
-    AngularFireModule.initializeApp(config),
+    // Firebase
     AngularFireAuthModule,
+    AngularFireModule.initializeApp(config),
+    // NgRx
+    StoreModule.forRoot({ notes: notesReducer }),
+    EffectsModule.forRoot([NotesEffects]),
+    // Material
     MatToolbarModule,
     MatButtonModule,
     MatSidenavModule,
