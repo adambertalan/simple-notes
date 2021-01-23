@@ -3,17 +3,25 @@
     <a routerLink="/home">My Notes</a>
   </span>
 
-  <mat-list *ngIf="authenticated">
-    <mat-list-item class="progress" *ngIf="noteService.loading">
+  <mat-list *ngIf="isAuthLoading$ | async">
+    <mat-list-item class="progress">
+      Logging in
+      <mat-icon>autorenew</mat-icon>
+    </mat-list-item>
+    <mat-divider [vertical]="true"></mat-divider>
+  </mat-list>
+
+  <mat-list *ngIf="authenticated$ | async">
+    <mat-list-item class="progress" *ngIf="isLoading$ | async">
       Saving
       <mat-icon>autorenew</mat-icon>
     </mat-list-item>
-    <mat-list-item class="saved" *ngIf="!noteService.loading">
+    <mat-list-item class="saved" *ngIf="!(isLoading$ | async)">
       Saved
       <mat-icon>check_circle</mat-icon>
     </mat-list-item>
-    <ng-container *ngIf="noteService.selectedNoteId !== null">
-      <mat-list-item *ngIf="noteService.selectedNoteCanBeSub">
+    <ng-container *ngIf="isNoteSelected$ | async">
+      <mat-list-item *ngIf="isMoveToSubEnabled$ | async">
         <button
           mat-icon-button
           color="accent"
@@ -48,10 +56,12 @@
   </mat-list>
 
   <div class="auth-container">
-    <ng-container *ngIf="!authenticated">
+    <ng-container *ngIf="!(authenticated$ | async)">
       <a mat-button routerLink="/login">Login</a>
       <a mat-button routerLink="/signup">Sign up</a>
     </ng-container>
-    <button *ngIf="authenticated" mat-button (click)="logout()">Logout</button>
+    <button *ngIf="authenticated$ | async" mat-button (click)="logout()">
+      Logout
+    </button>
   </div>
 </mat-toolbar>

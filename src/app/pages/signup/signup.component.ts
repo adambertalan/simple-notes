@@ -1,33 +1,35 @@
-import { Subscription } from 'rxjs';
-import { Router } from '@angular/router';
-import { AuthService } from './../../services/auth.service';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { selectSignupErrorMessage } from 'src/app/store/selectors/auth.selectors';
+import { Store } from '@ngrx/store';
+import { AppState } from 'src/app/store/reducers/app.state';
+import { startSignup } from 'src/app/store/actions/auth.actions';
 
 @Component({
   selector: 'app-signup',
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.scss'],
 })
-export class SignupComponent implements OnInit, OnDestroy {
+export class SignupComponent implements OnInit {
   email = '';
   password = '';
   confirmPassword = '';
 
-  authSub: Subscription | undefined;
+  signupErrorMsg$: Observable<string> = this.store$.select(
+    selectSignupErrorMessage
+  );
 
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-    private snackBar: MatSnackBar
-  ) {}
+  constructor(private store$: Store<AppState>, private snackBar: MatSnackBar) {}
 
-  ngOnInit(): void {}
-
-  ngOnDestroy(): void {
-    if (this.authSub) {
-      this.authSub.unsubscribe();
-    }
+  ngOnInit(): void {
+    this.signupErrorMsg$.subscribe((msg) => {
+      if (msg) {
+        this.snackBar.open(`😱 ${msg} 💥`, '', {
+          duration: 4000,
+        });
+      }
+    });
   }
 
   onSubmit(): void {
@@ -37,15 +39,11 @@ export class SignupComponent implements OnInit, OnDestroy {
       });
       return;
     }
-    this.authService.authenticated?.subscribe((isAuthenticated) => {
-      if (isAuthenticated) {
-        this.router.navigate(['/home']);
-      }
-    });
-    this.authService.register(this.email, this.password).catch((err) => {
-      this.snackBar.open(`😱 ${err.message} 💥`, '', {
-        duration: 4000,
-      });
-    });
+    this.store$.dispatch(
+      startSignup({
+        email: this.email,
+        password: this.password,
+      })
+    );
   }
 }

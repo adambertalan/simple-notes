@@ -1,3 +1,4 @@
+import { AuthEffects } from './store/effects/auth.effects';
 import { environment } from './../environments/environment';
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
@@ -34,6 +35,8 @@ import { StoreModule } from '@ngrx/store';
 import { notesReducer } from './store/reducers/notes.reducer';
 import { EffectsModule } from '@ngrx/effects';
 import { NotesEffects } from './store/effects/notes.effects';
+import { authReducer } from './store/reducers/auth.reducer';
+import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 
 const config = { ...environment.firebase };
 
@@ -61,8 +64,12 @@ const config = { ...environment.firebase };
     AngularFireAuthModule,
     AngularFireModule.initializeApp(config),
     // NgRx
-    StoreModule.forRoot({ notes: notesReducer }),
-    EffectsModule.forRoot([NotesEffects]),
+    StoreModule.forRoot({ notes: notesReducer, auth: authReducer }),
+    EffectsModule.forRoot([NotesEffects, AuthEffects]),
+    StoreDevtoolsModule.instrument({
+      maxAge: 25, // Retains last 25 states
+      logOnly: environment.production, // Restrict extension to log-only mode
+    }),
     // Material
     MatToolbarModule,
     MatButtonModule,

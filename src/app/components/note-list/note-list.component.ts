@@ -1,6 +1,12 @@
 import { Note } from './../../models/note.model';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { AppState } from 'src/app/store/reducers/app.state';
+import {
+  selectRootNote,
+  selectSubNote,
+} from 'src/app/store/actions/notes.actions';
 
 @Component({
   selector: 'app-note-list',
@@ -12,16 +18,20 @@ export class NoteListComponent implements OnInit {
   @Input() listId = '';
   @Input() otherListId = '';
   @Input() selectedId = '';
+  @Input() isRoot = false;
 
-  @Output() selectedNoteId = new EventEmitter<string>();
   @Output() noteDrop = new EventEmitter<CdkDragDrop<Note[]>>();
 
-  constructor() {}
+  constructor(private store$: Store<AppState>) {}
 
   ngOnInit(): void {}
 
-  noteSelected(noteId: string): void {
-    this.selectedNoteId.emit(noteId);
+  noteSelected(note: Note): void {
+    if (this.isRoot) {
+      this.store$.dispatch(selectRootNote({ note }));
+    } else {
+      this.store$.dispatch(selectSubNote({ note }));
+    }
   }
 
   drop(event: CdkDragDrop<Note[]>): void {

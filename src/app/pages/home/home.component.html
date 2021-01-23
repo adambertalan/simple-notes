@@ -1,27 +1,19 @@
 <mat-sidenav-container>
   <mat-sidenav mode="side" opened>
     <app-note-list
-      *ngIf="(rootNotes?.length || 0) > 0"
+      *ngIf="((rootNotes$ | async)?.length || 0) > 0"
+      [isRoot]="true"
       [listId]="'rootList'"
       [otherListId]="'subList'"
-      [notes]="rootNotes"
-      [selectedId]="selectedNoteId"
-      (selectedNoteId)="noteSelected($event)"
+      [notes]="(rootNotes$ | async) || []"
+      [selectedId]="(selectedRootNoteId$ | async) || ''"
       (noteDrop)="dropOntoRoot($event)"
     ></app-note-list>
     <app-note-list-placeholder
-      *ngIf="(rootNotes?.length || 0) === 0"
+      *ngIf="((rootNotes$ | async)?.length || 0) === 0"
     ></app-note-list-placeholder>
   </mat-sidenav>
   <mat-sidenav-content>
-    <app-main-content
-      [opened]="opened"
-      [subNotes]="subNotes"
-      [selectedNoteId]="selectedNoteId"
-      [selectedSubNoteId]="selectedSubNoteId"
-      [displayNote]="displayNote"
-      (subNoteSelected)="subNoteSelected($event)"
-      (droppedIntoSubList)="dropOntoSub($event)"
-    ></app-main-content>
+    <app-main-content></app-main-content>
   </mat-sidenav-content>
 </mat-sidenav-container>

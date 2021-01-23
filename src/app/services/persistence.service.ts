@@ -1,22 +1,34 @@
+import { AppState } from './../store/reducers/app.state';
 import { Note } from './../models/note.model';
-import { AuthService } from './auth.service';
 import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { first, map } from 'rxjs/operators';
+import { Store } from '@ngrx/store';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PersistenceService {
+  userId: string | undefined;
+
   constructor(
     private db: AngularFireDatabase,
-    private authService: AuthService
-  ) {}
+    private store$: Store<AppState>
+  ) {
+    this.store$
+      .select((state: AppState) => state.auth.user?.id ?? undefined)
+      .subscribe((userId) => {
+        this.userId = userId;
+      });
+  }
 
   loadNotes(): Promise<Note[]> {
+    if (!this.userId) {
+      return Promise.reject('User is not logged in!');
+    }
     return new Promise((resolve, reject) => {
       this.db
-        .list(this.authService.user?.uid + '/notes')
+        .list(this.userId + '/notes')
         .snapshotChanges()
         .pipe(
           first(),
@@ -54,7 +66,10 @@ export class PersistenceService {
   }
 
   saveAllNotes(notes: Note[]): Promise<void> {
-    const ref = this.db.object(this.authService.user?.uid + '/notes');
+    if (!this.userId) {
+      return Promise.reject('User is not logged in!');
+    }
+    const ref = this.db.object(this.userId + '/notes');
 
     const transformedNotes: any = {};
 
@@ -78,9 +93,14 @@ export class PersistenceService {
     });
 
     return new Promise((resolve, reject) => {
-      ref.set(transformedNotes).then(() => {
-        resolve();
-      });
+      ref
+        .set(transformedNotes)
+        .then(() => {
+          resolve();
+        })
+        .catch((err) => {
+          reject(err);
+        });
     });
   }
 
@@ -89,7 +109,10 @@ export class PersistenceService {
     content: string,
     position: number
   ): Promise<string> {
-    const ref = this.db.list(this.authService.user?.uid + '/notes');
+    if (!this.userId) {
+      return Promise.reject('User is not logged in!');
+    }
+    const ref = this.db.list(this.userId + '/notes');
 
     return new Promise((resolve, reject) => {
       ref
@@ -100,14 +123,18 @@ export class PersistenceService {
         })
         .then((savedRef) => {
           resolve(savedRef.key ?? '');
+        })
+        .catch((err) => {
+          reject(err);
         });
     });
   }
 
   updateRootNote(note: Note): Promise<void> {
-    const ref = this.db.object(
-      this.authService.user?.uid + '/notes/' + note.id
-    );
+    if (!this.userId) {
+      return Promise.reject('User is not logged in!');
+    }
+    const ref = this.db.object(this.userId + '/notes/' + note.id);
 
     const subNotes: any = {};
 
@@ -129,50 +156,37 @@ export class PersistenceService {
         })
         .then(() => {
           resolve();
+        })
+        .catch((err) => {
+          reject(err);
         });
     });
   }
 
   removeRootNote(noteId: string): Promise<void> {
-    const ref = this.db.object(this.authService.user?.uid + '/notes/' + noteId);
-
-    return new Promise((resolve, reject) => {
-      ref.remove().then(() => {
-        resolve();
-      });
-    });
-  }
-
-  addSubNote(
-    parentNoteId: string,
-    title: string,
-    content: string,
-    position: number
-  ): Promise<void> {
-    const ref = this.db.list(
-      this.authService.user?.uid + '/notes/' + parentNoteId + '/subNotes'
-    );
+    if (!this.userId) {
+      return Promise.reject('User is not logged in!');
+    }
+    const ref = this.db.object(this.userId + '/notes/' + noteId);
 
     return new Promise((resolve, reject) => {
       ref
-        .push({
-          title,
-          content,
-          position,
-        })
+        .remove()
         .then(() => {
           resolve();
+        })
+        .catch((err) => {
+          reject(err);
         });
     });
   }
 
   updateSubNote(parentNoteId: string, note: Note): Promise<void> {
+    if (!this.userId) {
+      return Promise.reject('User is not logged in!');
+    }
     const ref = this.db.object(
-      this.authService.user?.uid +
-        '/notes/' +
-        parentNoteId +
-        '/subNotes/' +
-        note.id
+      this.userId + '/notes/' + parentNoteId + '/subNotes/' + note.id
     );
 
     return new Promise((resolve, reject) => {
@@ -184,22 +198,29 @@ export class PersistenceService {
         })
         .then(() => {
           resolve();
+        })
+        .catch((err) => {
+          reject(err);
         });
     });
   }
 
   removeSubNote(parentNoteId: string, subNoteId: string): Promise<void> {
+    if (!this.userId) {
+      return Promise.reject('User is not logged in!');
+    }
     const ref = this.db.object(
-      this.authService.user?.uid +
-        '/notes/' +
-        parentNoteId +
-        '/subNotes/' +
-        subNoteId
+      this.userId + '/notes/' + parentNoteId + '/subNotes/' + subNoteId
     );
     return new Promise((resolve, reject) => {
-      ref.remove().then(() => {
-        resolve();
-      });
+      ref
+        .remove()
+        .then(() => {
+          resolve();
+        })
+        .catch((err) => {
+          reject(err);
+        });
     });
   }
 }

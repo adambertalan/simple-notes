@@ -1,9 +1,19 @@
-import { NoteService } from './../../services/note.service';
-import { PersistenceService } from './../../services/persistence.service';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { Note } from './../../models/note.model';
-import { Component, Input, OnInit } from '@angular/core';
-import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
+import { Component, OnInit } from '@angular/core';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  first,
+  withLatestFrom,
+} from 'rxjs/operators';
+import { Store } from '@ngrx/store';
+import { AppState } from 'src/app/store/reducers/app.state';
+import {
+  startUpdateRootNote,
+  startUpdateSubNote,
+} from 'src/app/store/actions/notes.actions';
 
 @Component({
   selector: 'app-note',
@@ -11,9 +21,6 @@ import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
   styleUrls: ['./note.component.scss'],
 })
 export class NoteComponent implements OnInit {
-  @Input() parentId: string | null = null;
-  @Input() note: Note | null = null;
-
   titleChangeSubj: Subject<string> = new Subject<string>();
   contentChangeSubj: Subject<string> = new Subject<string>();
 
@@ -29,48 +36,97 @@ export class NoteComponent implements OnInit {
     debounceTime(500)
   );
 
-  constructor(
-    private noteSerivce: NoteService,
-    private persistenceService: PersistenceService
-  ) {}
+  displayNoteId$: Observable<string> = this.store$.select(
+    (state: AppState) => state.notes.displayNoteId
+  );
+  displayNoteTitle$: Observable<string> = this.store$.select(
+    (state: AppState) => state.notes.displayNoteTitle
+  );
+  displayNoteContent$: Observable<string> = this.store$.select(
+    (state: AppState) => state.notes.displayNoteContent
+  );
+
+  selectedRootNoteId$: Observable<string> = this.store$.select(
+    (state: AppState) => state.notes.selectedRootNoteId
+  );
+  selectedSubNoteId$: Observable<string> = this.store$.select(
+    (state: AppState) => state.notes.selectedSubNoteId
+  );
+  displayNote$: Observable<Note | undefined> = this.store$.select(
+    (state: AppState) =>
+      state.notes.rootNotes.find((n) => n.id === state.notes.displayNoteId) ??
+      state.notes.subNotes.find((n) => n.id === state.notes.displayNoteId)
+  );
+
+  constructor(private store$: Store<AppState>) {}
 
   ngOnInit(): void {
     this.saveTitle.subscribe((title) => {
-      if (!this.note) {
-        return;
-      }
-      this.note.title = title;
-      this.noteSerivce.loading = true;
-      if (this.parentId) {
-        this.persistenceService
-          .updateSubNote(this.parentId, this.note)
-          .finally(() => {
-            this.noteSerivce.loading = false;
-          });
-      } else {
-        this.persistenceService.updateRootNote(this.note).finally(() => {
-          this.noteSerivce.loading = false;
+      this.displayNote$
+        .pipe(
+          filter((displayNote) => !!displayNote),
+          first(),
+          withLatestFrom(this.selectedRootNoteId$, this.selectedSubNoteId$)
+        )
+        .subscribe(([displayNote, selectedRootNoteId, selectedSubNoteId]) => {
+          if (!displayNote) {
+            return;
+          }
+          if (displayNote.id === selectedRootNoteId) {
+            this.store$.dispatch(
+              startUpdateRootNote({
+                note: {
+                  ...displayNote,
+                  title,
+                },
+              })
+            );
+          } else if (displayNote.id === selectedSubNoteId) {
+            this.store$.dispatch(
+              startUpdateSubNote({
+                parentNoteId: selectedRootNoteId,
+                note: {
+                  ...displayNote,
+                  title,
+                },
+              })
+            );
+          }
         });
-      }
     });
 
     this.saveContent.subscribe((content) => {
-      if (!this.note) {
-        return;
-      }
-      this.note.content = content;
-      this.noteSerivce.loading = true;
-      if (this.parentId) {
-        this.persistenceService
-          .updateSubNote(this.parentId, this.note)
-          .finally(() => {
-            this.noteSerivce.loading = false;
-          });
-      } else {
-        this.persistenceService.updateRootNote(this.note).finally(() => {
-          this.noteSerivce.loading = false;
+      this.displayNote$
+        .pipe(
+          filter((displayNote) => !!displayNote),
+          first(),
+          withLatestFrom(this.selectedRootNoteId$, this.selectedSubNoteId$)
+        )
+        .subscribe(([displayNote, selectedRootNoteId, selectedSubNoteId]) => {
+          if (!displayNote) {
+            return;
+          }
+          if (displayNote.id === selectedRootNoteId) {
+            this.store$.dispatch(
+              startUpdateRootNote({
+                note: {
+                  ...displayNote,
+                  content,
+                },
+              })
+            );
+          } else if (displayNote.id === selectedSubNoteId) {
+            this.store$.dispatch(
+              startUpdateSubNote({
+                parentNoteId: selectedRootNoteId,
+                note: {
+                  ...displayNote,
+                  content,
+                },
+              })
+            );
+          }
         });
-      }
     });
   }
 

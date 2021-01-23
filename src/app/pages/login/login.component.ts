@@ -2,44 +2,43 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from './../../services/auth.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { AppState } from 'src/app/store/reducers/app.state';
+import { startLogin } from 'src/app/store/actions/auth.actions';
+import { selectLoginErrorMessage } from 'src/app/store/selectors/auth.selectors';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
-export class LoginComponent implements OnInit, OnDestroy {
+export class LoginComponent implements OnInit {
   email = '';
   password = '';
-  authSub: Subscription | undefined;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-    private snackBar: MatSnackBar
-  ) {}
+  loginErrorMsg$: Observable<string> = this.store$.select(
+    selectLoginErrorMessage
+  );
 
-  ngOnInit(): void {}
+  constructor(private store$: Store<AppState>, private snackBar: MatSnackBar) {}
 
-  ngOnDestroy(): void {
-    if (this.authSub) {
-      this.authSub.unsubscribe();
-    }
+  ngOnInit(): void {
+    this.loginErrorMsg$.subscribe((msg) => {
+      if (msg) {
+        this.snackBar.open(`😱 ${msg} 💥`, '', {
+          duration: 4000,
+        });
+      }
+    });
   }
 
   onSubmit(): void {
-    this.authSub = this.authService.authenticated?.subscribe(
-      (isAuthenticated) => {
-        if (isAuthenticated) {
-          this.router.navigate(['/home']);
-        }
-      }
+    this.store$.dispatch(
+      startLogin({
+        email: this.email,
+        password: this.password,
+      })
     );
-    this.authService.login(this.email, this.password).catch((err) => {
-      this.snackBar.open(`😱 ${err.message} 💥`, '', {
-        duration: 4000,
-      });
-    });
   }
 }

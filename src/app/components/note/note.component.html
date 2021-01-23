@@ -3,7 +3,7 @@
     <mat-form-field>
       <input
         matInput
-        [value]="note?.title"
+        [value]="displayNoteTitle$ | async"
         (input)="titleChange($event.target)"
       />
     </mat-form-field>
@@ -14,7 +14,7 @@
         matInput
         cdkTextareaAutosize
         cdkAutosizeMinRows="1"
-        [value]="note?.content || ''"
+        [value]="displayNoteContent$ | async"
         (input)="contentChange($event.target)"
       >
       </textarea>

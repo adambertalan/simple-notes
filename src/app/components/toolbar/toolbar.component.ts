@@ -1,8 +1,21 @@
-import { PersistenceService } from './../../services/persistence.service';
-import { AuthService } from './../../services/auth.service';
-import { NoteService } from './../../services/note.service';
+import {
+  moveRootNoteToSub,
+  startRemoveRootNote,
+  startRemoveSubNote,
+} from './../../store/actions/notes.actions';
+import {
+  selectIsMoveToSubEnabled,
+  selectDisplayNoteId,
+  selectIsLoading,
+} from './../../store/selectors/notes.selectors';
+import { Observable } from 'rxjs';
+import { selectIsAuthenticated } from './../../store/selectors/auth.selectors';
 import { Component, OnInit } from '@angular/core';
-import { Route, Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { AppState } from 'src/app/store/reducers/app.state';
+import { first, map, withLatestFrom } from 'rxjs/operators';
+import { startLogout } from 'src/app/store/actions/auth.actions';
+import { startAddRootNote } from 'src/app/store/actions/notes.actions';
 
 @Component({
   selector: 'app-toolbar',
@@ -10,40 +23,127 @@ import { Route, Router } from '@angular/router';
   styleUrls: ['./toolbar.component.scss'],
 })
 export class ToolbarComponent implements OnInit {
-  authenticated = false;
+  authenticated$: Observable<boolean> = this.store$.select(
+    selectIsAuthenticated
+  );
 
-  constructor(
-    public noteService: NoteService,
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  isMoveToSubEnabled$: Observable<boolean> = this.store$.select(
+    selectIsMoveToSubEnabled
+  );
 
-  ngOnInit(): void {
-    this.authService.authenticated?.subscribe((isAuthenticated) => {
-      this.authenticated = isAuthenticated;
-      if (!this.authenticated) {
-        this.router.navigate(['login']);
+  isNoteSelected$: Observable<boolean> = this.store$
+    .select(selectDisplayNoteId)
+    .pipe(map((displayNoteId) => !!displayNoteId));
+
+  isLoading$: Observable<boolean> = this.store$.select(selectIsLoading);
+
+  isAuthLoading$: Observable<boolean> = this.store$.select(
+    (state: AppState) => state.auth.loading
+  );
+
+  newNotePosition$: Observable<number> = this.store$.select((state: AppState) =>
+    state.notes.selectedRootNoteId
+      ? state.notes.rootNotes.findIndex(
+          (n) => n.id === state.notes.selectedRootNoteId
+        ) + 1
+      : state.notes.rootNotes.length
+  );
+
+  selectedRootNoteId$: Observable<string> = this.store$.select(
+    (state: AppState) => state.notes.selectedRootNoteId
+  );
+  selectedSubNoteId$: Observable<string> = this.store$.select(
+    (state: AppState) => state.notes.selectedSubNoteId
+  );
+  displayNoteId$: Observable<string> = this.store$.select(selectDisplayNoteId);
+  selectedRootNoteIndex$: Observable<number> = this.store$.select(
+    (state: AppState) =>
+      state.notes.rootNotes.findIndex(
+        (n) => n.id === state.notes.selectedRootNoteId
+      )
+  );
+  subNotesLength$: Observable<number> = this.store$.select(
+    (state: AppState) => {
+      const selectedRootNoteIndex = state.notes.rootNotes.findIndex(
+        (n) => n.id === state.notes.selectedRootNoteId
+      );
+      if (selectedRootNoteIndex === -1) {
+        return 0;
       }
-    });
-  }
+      return (
+        state.notes.rootNotes[selectedRootNoteIndex - 1].subNotes?.length ?? 0
+      );
+    }
+  );
+  noteIdBeforeSelectedRootNote$: Observable<string> = this.store$.select(
+    (state: AppState) => {
+      const selectedRootNoteIndex = state.notes.rootNotes.findIndex(
+        (n) => n.id === state.notes.selectedRootNoteId
+      );
+      if (selectedRootNoteIndex === -1) {
+        return '';
+      }
+      return state.notes.rootNotes[selectedRootNoteIndex - 1].id;
+    }
+  );
+
+  constructor(private store$: Store<AppState>) {}
+
+  ngOnInit(): void {}
 
   moveToSubClick(): void {
-    if (this.noteService.selectedNoteId) {
-      this.noteService.moveToSubNote.next(this.noteService.selectedNoteId);
-    }
+    this.selectedRootNoteIndex$
+      .pipe(
+        first(),
+        withLatestFrom(this.subNotesLength$, this.noteIdBeforeSelectedRootNote$)
+      )
+      .subscribe(([index, subNotesLength, parentId]) => {
+        if (index === -1) {
+          return;
+        }
+        this.store$.dispatch(
+          moveRootNoteToSub({
+            rootNoteIndex: index,
+            subNoteIndex: subNotesLength,
+            subNoteParentId: parentId,
+          })
+        );
+      });
   }
 
   deleteClick(): void {
-    if (this.noteService.selectedNoteId) {
-      this.noteService.deleteNote.next(this.noteService.selectedNoteId);
-    }
+    this.displayNoteId$
+      .pipe(
+        first(),
+        withLatestFrom(this.selectedRootNoteId$, this.selectedSubNoteId$)
+      )
+      .subscribe(([displayNoteId, selectedRootNoteId, selectedSubNoteId]) => {
+        if (displayNoteId === selectedRootNoteId) {
+          this.store$.dispatch(startRemoveRootNote({ noteId: displayNoteId }));
+        } else if (displayNoteId === selectedSubNoteId) {
+          this.store$.dispatch(
+            startRemoveSubNote({
+              parentNoteId: selectedRootNoteId,
+              noteId: displayNoteId,
+            })
+          );
+        }
+      });
   }
 
   createClick(): void {
-    this.noteService.createNote.next();
+    this.newNotePosition$.pipe(first()).subscribe((position) => {
+      this.store$.dispatch(
+        startAddRootNote({
+          title: 'My new note',
+          content: 'Great ideas goes here',
+          position,
+        })
+      );
+    });
   }
 
   logout(): void {
-    this.authService.logout();
+    this.store$.dispatch(startLogout());
   }
 }

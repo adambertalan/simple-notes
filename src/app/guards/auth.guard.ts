@@ -9,12 +9,15 @@ import {
   Router,
 } from '@angular/router';
 import { Observable, of } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { AppState } from '../store/reducers/app.state';
+import { selectIsAuthenticated } from '../store/selectors/auth.selectors';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private store$: Store<AppState>, private router: Router) {}
 
   canActivate(
     route: ActivatedRouteSnapshot,
@@ -25,7 +28,7 @@ export class AuthGuard implements CanActivate {
     | boolean
     | UrlTree {
     return (
-      this.authService.authenticated?.pipe(
+      this.store$.select(selectIsAuthenticated).pipe(
         map((isAuthenticated: boolean) => {
           if (isAuthenticated) {
             return true;

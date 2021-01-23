@@ -1,5 +1,7 @@
-import { NoteService } from './../../services/note.service';
+import { AppState } from './../../store/reducers/app.state';
 import { Component, OnInit } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { startAddRootNote } from 'src/app/store/actions/notes.actions';
 
 @Component({
   selector: 'app-note-list-placeholder',
@@ -7,11 +9,17 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./note-list-placeholder.component.scss'],
 })
 export class NoteListPlaceholderComponent implements OnInit {
-  constructor(private noteService: NoteService) {}
+  constructor(private store$: Store<AppState>) {}
 
   ngOnInit(): void {}
 
   createNote(): void {
-    this.noteService.createNote.next();
+    this.store$.dispatch(
+      startAddRootNote({
+        title: 'My new note',
+        content: 'Great ideas goes here',
+        position: 0,
+      })
+    );
   }
 }

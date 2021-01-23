@@ -9,7 +9,7 @@
     *ngFor="let note of notes"
     [value]="note.id"
     [selected]="selectedId === note.id"
-    (click)="noteSelected(note.id)"
+    (click)="noteSelected(note)"
     cdkDrag
   >
     <span class="list-text-container">

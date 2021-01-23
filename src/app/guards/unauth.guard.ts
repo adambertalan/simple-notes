@@ -1,3 +1,4 @@
+import { selectIsAuthenticated } from './../store/selectors/auth.selectors';
 import { AuthService } from './../services/auth.service';
 import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
@@ -9,12 +10,14 @@ import {
   Router,
 } from '@angular/router';
 import { Observable, of } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { AppState } from '../store/reducers/app.state';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UnauthGuard implements CanActivate {
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private store$: Store<AppState>, private router: Router) {}
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
@@ -24,7 +27,7 @@ export class UnauthGuard implements CanActivate {
     | boolean
     | UrlTree {
     return (
-      this.authService.authenticated?.pipe(
+      this.store$.select(selectIsAuthenticated).pipe(
         map((isAuthenticated: boolean) => {
           if (isAuthenticated) {
             return this.router.createUrlTree(['home']);

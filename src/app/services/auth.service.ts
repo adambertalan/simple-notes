@@ -1,32 +1,19 @@
 import { Injectable } from '@angular/core';
 import firebase from 'firebase/app';
 import { AngularFireAuth } from '@angular/fire/auth';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  authenticated: Observable<boolean> | undefined;
-  user: firebase.User | null = null;
+  constructor(public auth: AngularFireAuth) {}
 
-  constructor(public auth: AngularFireAuth, private router: Router) {
-    this.authenticated = this.auth.authState.pipe(
-      map((firebaseUser) => !!firebaseUser)
-    );
-    this.auth.authState.subscribe((firebaseUser) => {
-      this.user = firebaseUser;
-    });
-  }
-
-  register(email: string, password: string): Promise<void> {
+  register(email: string, password: string): Promise<firebase.User | null> {
     return new Promise((resolve, reject) => {
       this.auth
         .createUserWithEmailAndPassword(email, password)
-        .then(() => {
-          resolve();
+        .then(({ user }) => {
+          resolve(user);
         })
         .catch((err) => {
           reject(err);
@@ -34,12 +21,12 @@ export class AuthService {
     });
   }
 
-  login(email: string, password: string): Promise<void> {
+  login(email: string, password: string): Promise<firebase.User | null> {
     return new Promise((resolve, reject) => {
       this.auth
         .signInWithEmailAndPassword(email, password)
-        .then(() => {
-          resolve();
+        .then(({ user }) => {
+          resolve(user);
         })
         .catch((err) => {
           reject(err);
